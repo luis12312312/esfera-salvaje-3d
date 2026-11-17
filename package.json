@@ -1,0 +1,15 @@
+{
+  "name": "esfera-salvaje-3d",
+  "private": true,
+  "version": "3.0.0",
+  "description": "Juego 3D de crecimiento y supervivencia en un bosque encantado",
+  "scripts": {
+    "start": "node tools/serve.cjs",
+    "build": "node tools/build.cjs",
+    "preview": "node tools/serve.cjs --dist",
+    "test": "node tools/check.cjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.56.1"
+  }
+}
