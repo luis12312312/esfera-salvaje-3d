@@ -3,6 +3,7 @@ artifacts/
 dist/
 backup/
 .deploy/
+.vercel/
 .env
 .env.*
 .aws/

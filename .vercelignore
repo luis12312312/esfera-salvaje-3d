@@ -1,0 +1,14 @@
+node_modules/
+artifacts/
+backup/
+dist/
+.deploy/
+.github/
+.aws/
+.codex/
+.agents/
+.env*
+tools/github-local.cjs
+promptInicial.md
+Esfera Salvaje 3D.md
+*.log

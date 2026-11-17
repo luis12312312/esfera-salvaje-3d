@@ -7,7 +7,11 @@
     "start": "node tools/serve.cjs",
     "build": "node tools/build.cjs",
     "preview": "node tools/serve.cjs --dist",
-    "test": "node tools/check.cjs"
+    "test": "node tools/check.cjs",
+    "test:production": "npm run build && node tools/check.cjs --dist"
+  },
+  "engines": {
+    "node": "22.x"
   },
   "devDependencies": {
     "playwright-core": "^1.56.1"

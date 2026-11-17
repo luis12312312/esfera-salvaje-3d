@@ -144,7 +144,7 @@ function createForestAtmosphere({THREE:T,scene,renderer,camera,sun,sky,water,gra
       for(let i=0;i<fireCount;i++){const f=fireSeeds[i],x=Math.floor(player.x/40)*40+f.x+Math.sin(clock*f.speed+f.phase)*3,z=Math.floor(player.z/40)*40+f.z+Math.cos(clock*f.speed+f.phase)*3;firePositions.set([x,H(x,z)+f.y+Math.sin(clock+f.phase)*.3,z],i*3)}fireGeo.attributes.position.needsUpdate=true;
       mist.forEach(m=>{const x=player.x+m.x+Math.sin(clock*.04+m.phase)*7,z=player.z+m.z;m.sprite.position.set(x,H(x,z)+2,z);m.sprite.material.color.copy(current.fog);m.sprite.material.opacity=.028+current.night*.04});
       if(state==='play'&&!player.dead){
-        if(previousJump>.04&&player.jy===0){ripple();emit(new T.Vector3(player.x,H(player.x,player.z)+.1,player.z),new T.Color(.65,.8,.42),12,player.r*2.5,1,.55)}
+        if(previousJump>0&&player.jy===0){ripple();emit(new T.Vector3(player.x,H(player.x,player.z)+.1,player.z),new T.Color(.65,.8,.42),12,player.r*2.5,1,.55)}
         if(level>previousLevel)ripple(true);previousLevel=level;previousJump=player.jy;
       }
       for(const ring of rings){ring.age+=simDt;const f=ring.age/ring.duration;ring.mesh.visible=f<1;if(f<1){ring.mesh.scale.setScalar(ring.radius*(1+f*2.4));ring.mesh.material.opacity=(1-f)*(1-f)*.65}}

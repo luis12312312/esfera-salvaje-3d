@@ -44,12 +44,40 @@ Las pruebas usan una instalación local de Chrome o Edge en Windows y Playwright
 
 ## Publicar
 
+### Vercel
+
+El repositorio incluye `vercel.json` con la configuración completa. Importa **luis12312312/esfera-salvaje-3d** desde [Vercel → Add New Project](https://vercel.com/new), selecciona la rama `main` y deja **Root Directory** en la raíz del repositorio (`./`).
+
+| Ajuste | Valor |
+|---|---|
+| Framework Preset | Other |
+| Node.js | 22.x |
+| Install Command | Vacío; se omite la instalación |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Variables de entorno | Ninguna |
+
+Estos valores se aplican desde `vercel.json` y `package.json`. El build solo usa módulos incluidos en Node.js: no necesita dependencias de desarrollo, claves ni un servidor en producción. Vercel sirve `dist/index.html` y los recursos locales como archivos estáticos. Al conectar el repositorio, los siguientes pushes a la rama de producción generan nuevos despliegues. [Configuración oficial de Vercel](https://vercel.com/docs/project-configuration/vercel-json).
+
+Para verificar el resultado de producción antes de desplegar:
+
+```sh
+npm ci
+npm run test:production
+```
+
+Las dependencias de desarrollo se usan únicamente para las pruebas de navegador. `.vercelignore` excluye respaldos, capturas, temporales y herramientas locales al desplegar con la CLI. `.vercel/` se mantiene fuera del repositorio.
+
+### Build y vista previa local
+
 ```sh
 npm run build
 npm run preview
 ```
 
 El build valida JavaScript y referencias locales y genera `dist/index.html`. Incluye únicamente el juego, las hojas de estilo, los scripts gráficos y Three.js con su licencia. No necesita instalar dependencias para compilar. Las rutas relativas funcionan bajo el subdirectorio del proyecto en GitHub Pages.
+
+### GitHub Pages
 
 Cada push a `main` ejecuta `.github/workflows/pages.yml` y publica `dist/` en GitHub Pages. También puede ejecutarse desde Actions → Publicar Esfera Salvaje → Run workflow. En Settings → Pages, el origen debe ser **GitHub Actions**. No se necesitan claves ni secretos de despliegue.
 
