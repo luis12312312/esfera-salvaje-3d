@@ -47,20 +47,31 @@ function createForestAtmosphere({THREE:T,scene,renderer,camera,sun,sky,water,gra
   const reflectionTarget=new T.WebGLRenderTarget(512,512,{minFilter:T.LinearFilter,magFilter:T.LinearFilter,depthBuffer:true});
   const mirrorCamera=new T.PerspectiveCamera(),mirrorMatrix=new T.Matrix4(),bias=new T.Matrix4().set(.5,0,0,.5,0,.5,0,.5,0,0,.5,.5,0,0,0,1);
   const direction=new T.Vector3(),mirrorTarget=new T.Vector3(),clipPlane=new T.Plane(new T.Vector3(0,1,0),-WL-.025);
-  const waterUniforms={time,night,heightMap:{value:heightMap},reflectionMap:{value:reflectionTarget.texture},mirrorMatrix:{value:mirrorMatrix},reflectionEnabled:{value:1},worldSize:{value:W*2},waterLevel:{value:WL},horizonColor:{value:current.horizon}};
+  const waterUniforms={time,night,heightMap:{value:heightMap},reflectionMap:{value:reflectionTarget.texture},mirrorMatrix:{value:mirrorMatrix},reflectionEnabled:{value:1},worldSize:{value:W*2},waterLevel:{value:WL},horizonColor:{value:current.horizon},lightDirection:{value:current.direction},lightColor:{value:current.sun}};
   water.material.dispose();
   water.material=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:waterUniforms,
     vertexShader:`uniform float time;uniform mat4 mirrorMatrix;varying vec3 vWorld;varying vec4 vMirror;
       void main(){vec3 p=position;p.z+=sin(p.x*.6+time)*.025+cos(p.y*.5-time*.7)*.025;vec4 world=modelMatrix*vec4(p,1.);vWorld=world.xyz;vMirror=mirrorMatrix*world;gl_Position=projectionMatrix*viewMatrix*world;}`,
-    fragmentShader:`uniform float time;uniform float night;uniform float worldSize;uniform float waterLevel;uniform float reflectionEnabled;uniform sampler2D heightMap;uniform sampler2D reflectionMap;uniform vec3 horizonColor;varying vec3 vWorld;varying vec4 vMirror;
+    fragmentShader:`uniform float time;uniform float night;uniform float worldSize;uniform float waterLevel;uniform float reflectionEnabled;uniform sampler2D heightMap;uniform sampler2D reflectionMap;uniform vec3 horizonColor;uniform vec3 lightDirection;uniform vec3 lightColor;varying vec3 vWorld;varying vec4 vMirror;
       void main(){vec2 p=vWorld.xz;vec2 mapUv=clamp(p/worldSize+.5,vec2(0.),vec2(1.));float floorHeight=texture2D(heightMap,mapUv).r*48.-24.;float depth=max(0.,waterLevel-floorHeight);
-        vec2 wave=vec2(sin(p.x*1.1+time*.8+sin(p.y*.7)),cos(p.y*1.3-time*.6+sin(p.x*.6)));float fresnel=pow(1.-max(0.,normalize(cameraPosition-vWorld).y),3.);
+        vec3 viewDir=normalize(cameraPosition-vWorld);
+        vec2 wave=vec2(sin(p.x*1.1+time*.8+sin(p.y*.7)),cos(p.y*1.3-time*.6+sin(p.x*.6)));
+        vec2 wind=vec2(cos(dot(p,vec2(3.7,2.4))-time*2.),sin(dot(p,vec2(-1.7,4.4))+time*1.5));
+        float detail=1.-smoothstep(16.,72.,length(cameraPosition-vWorld));
+        vec2 slope=wave*.136+wind*.075*detail;
+        vec3 waveNormal=normalize(vec3(slope.x,1.,slope.y));
+        float fresnel=pow(1.-clamp(dot(waveNormal,viewDir),0.,1.),4.);
+        vec3 halfDir=normalize(lightDirection+viewDir);
+        float specular=pow(max(0.,dot(waveNormal,halfDir)),128.)+pow(max(0.,dot(waveNormal,halfDir)),28.)*.21;
         vec3 shallow=mix(vec3(.12,.31,.22),vec3(.035,.095,.14),night),deep=mix(vec3(.015,.13,.115),vec3(.012,.04,.075),night);vec3 c=mix(shallow,deep,smoothstep(.1,4.,depth));c=mix(c,horizonColor*.65,fresnel*.65);
         float caustic=pow(max(0.,sin(p.x*3.+wave.y)*cos(p.y*2.8+wave.x)),9.);c+=vec3(.1,.14,.065)*caustic*exp(-depth*.6)*(1.-night*.8);
-        float foam=(1.-smoothstep(.05,.65,depth))*(.5+.5*sin(depth*20.-time*1.5+wave.x));c+=mix(vec3(.25,.29,.2),vec3(.06,.11,.15),night)*foam;
+        float crest=.5+.5*sin(depth*25.-time*2.+wave.x+wave.y*.5);
+        float foam=(1.-smoothstep(.08,.48,depth))*smoothstep(.72,.98,crest);
+        c+=mix(vec3(.27,.29,.21),vec3(.065,.09,.13),night)*foam;
+        c+=lightColor*specular*mix(.8,.33,night);
         gl_FragColor=vec4(c,mix(.7,.97,smoothstep(0.,1.,depth)));
         #include <tonemapping_fragment>
-        vec2 reflectionUv=vMirror.xy/max(.0001,vMirror.w);reflectionUv+=wave*.0025;float edge=smoothstep(0.,.04,reflectionUv.x)*smoothstep(0.,.04,reflectionUv.y)*smoothstep(0.,.04,1.-reflectionUv.x)*smoothstep(0.,.04,1.-reflectionUv.y);
+        vec2 reflectionUv=vMirror.xy/max(.0001,vMirror.w);reflectionUv+=slope*.037;float edge=smoothstep(0.,.04,reflectionUv.x)*smoothstep(0.,.04,reflectionUv.y)*smoothstep(0.,.04,1.-reflectionUv.x)*smoothstep(0.,.04,1.-reflectionUv.y);
         vec3 reflected=texture2D(reflectionMap,clamp(reflectionUv,vec2(.001),vec2(.999))).rgb;gl_FragColor.rgb=mix(gl_FragColor.rgb,reflected,(.28+fresnel*.55)*reflectionEnabled*edge);
         #include <encodings_fragment>
       }`});
@@ -74,13 +85,17 @@ function createForestAtmosphere({THREE:T,scene,renderer,camera,sun,sky,water,gra
   };
   grass.material.needsUpdate=true;
 
-  // Thin luminous rims, natural blinking and surface flecks bring the gel to life.
+  // Vary the internal gel tint in local space so the color follows the squash and stretch.
   for(const s of slimes){
     const body=s.b.children[0],gelColor=s.col.clone().convertSRGBToLinear();
     body.material.onBeforeCompile=shader=>{
-      shader.uniforms.gelNight=night;shader.uniforms.gelColor={value:gelColor};
-      shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float gelNight;uniform vec3 gelColor;').replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
-        float gelRim=pow(1.-abs(dot(normalize(vNormal),normalize(vViewPosition))),3.);totalEmissiveRadiance+=gelColor*gelRim*(.12+gelNight*.38);`);
+      shader.uniforms.gelNight=night;shader.uniforms.gelColor={value:gelColor};shader.uniforms.gelTime=time;
+      shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vGelLocal;').replace('#include <begin_vertex>','#include <begin_vertex>\nvGelLocal=position;');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float gelNight;uniform vec3 gelColor;uniform float gelTime;varying vec3 vGelLocal;').replace('#include <color_fragment>',`#include <color_fragment>
+        float layer=smoothstep(-.7,.72,vGelLocal.y+.095*sin(vGelLocal.x*7.+vGelLocal.z*4.-gelTime*.85));
+        diffuseColor.rgb*=mix(vec3(.36,.68,.78),vec3(1.03,1.,.92),layer);`).replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+        float gelRim=pow(1.-abs(dot(normalize(vNormal),normalize(vViewPosition))),3.);
+        totalEmissiveRadiance+=mix(gelColor,vec3(.25,.56,.46),.20)*gelRim*(.16+gelNight*.38);`);
     };body.material.needsUpdate=true;
   }
   const fleckGeo=new T.BufferGeometry(),fleckPositions=[];

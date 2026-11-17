@@ -1,6 +1,6 @@
-# Esfera Salvaje 3D — Luz entre los árboles
+# Esfera Salvaje 3D — El bosque antiguo
 
-Juego de crecimiento y supervivencia en un bosque 3D. La edición gráfica 03 añade reflejos del escenario en el agua, orillas con espuma y cáusticas, amanecer, atardecer y noche con estrellas y luciérnagas. La hierba se aparta al pasar, la esfera parpadea y reacciona a los depredadores, y aparecen ondas al aterrizar o subir de nivel y una estela al acelerar.
+Juego de crecimiento y supervivencia en un bosque 3D. Explora el claro del arco de piedra, con árboles de raíces visibles, follaje de otoño, juncos y nenúfares. La luz del sol o la luna se refleja sobre las ondas del lago, y la esfera tiene una superficie gelatinosa con color y brillo en movimiento.
 
 **[Jugar online](https://luis12312312.github.io/esfera-salvaje-3d/)** · **[Despliegues](https://github.com/luis12312312/esfera-salvaje-3d/actions/workflows/pages.yml)**
 
@@ -8,7 +8,7 @@ En **Opciones → Luz del bosque**, elige el claro del alba, la hora dorada o la
 
 ## Jugar
 
-Abre **Esfera Salvaje 3D.html** en Chrome, Edge o Firefox. Todos los recursos están incluidos; no necesita conexión a internet. Mantén el HTML junto a `forest.css`, `forest-graphics.js`, `forest-atmosphere.js` y la carpeta `vendor`.
+Abre **Esfera Salvaje 3D.html** en Chrome, Edge o Firefox. Todos los recursos están incluidos; no necesita conexión a internet. Mantén el HTML junto a `forest.css`, `forest-graphics.js`, `forest-atmosphere.js`, `forest-scenery.js` y la carpeta `vendor`.
 
 También puedes iniciar un servidor local con Node.js:
 
@@ -86,6 +86,7 @@ Cada push a `main` ejecuta `.github/workflows/pages.yml` y publica `dist/` en Gi
 - `Esfera Salvaje 3D.html`: mundo, física, inteligencia artificial y audio.
 - `forest-graphics.js`: arte procedural, materiales, ambiente y efectos gráficos.
 - `forest-atmosphere.js`: ciclo de luz, cielo, reflejos, luciérnagas y efectos del personaje.
+- `forest-scenery.js`: geometría de los árboles, el arco y las plantas de la orilla.
 - `forest.css`: interfaz adaptable a PC y celular.
 - `vendor/three.min.js`: Three.js r128, licencia MIT.
 - `backup/Esfera Salvaje 3D.html`: versión original, sin modificaciones.

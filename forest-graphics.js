@@ -34,10 +34,15 @@ function createForestGraphics({THREE:T,scene,renderer,camera,sun,terrain,water,g
       float hashGround(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float groundNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hashGround(i),hashGround(i+vec2(1,0)),f.x),mix(hashGround(i+vec2(0,1)),hashGround(i+vec2(1,1)),f.x),f.y);}`)
       .replace('#include <color_fragment>',`#include <color_fragment>
-      float groundPatch=groundNoise(vGround.xz*.17);float fine=groundNoise(vGround.xz*5.);
-      diffuseColor.rgb*=mix(vec3(.76,.83,.55),vec3(1.13,1.06,.84),groundPatch)*(.9+fine*.18);
-      float path=1.-smoothstep(1.5,4.8,abs(vGround.z-30.*sin(vGround.x*.02)));
-      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.29,.24,.115)*(1.+fine*.2),path*.5);`);
+      float groundPatch=groundNoise(vGround.xz*.17);
+      float fine=groundNoise(vGround.xz*5.);
+      float scatter=groundNoise(vGround.xz*1.4);
+      float grit=groundNoise(vGround.xz*14.);
+      diffuseColor.rgb*=mix(vec3(.66,.81,.54),vec3(1.24,1.13,.85),groundPatch)*(.80+fine*.26+scatter*.18);
+      float pathOffset=abs(vGround.z-30.*sin(vGround.x*.02))+(scatter-.5)*1.7;
+      float path=1.-smoothstep(1.2,4.4,pathOffset);
+      vec3 dust=mix(vec3(.115,.077,.033),vec3(.31,.235,.117),.33*scatter+.67*grit);
+      diffuseColor.rgb=mix(diffuseColor.rgb,dust,path*.72);`);
   };
 
   // Curved grass blades, lit on both sides, with wind based on world position.
@@ -175,8 +180,12 @@ function createForestGraphics({THREE:T,scene,renderer,camera,sun,terrain,water,g
     update(dt,time,state){
       uniforms.time.value=time;
       const menu=state==='menu'||state==='options';
-      for(const it of items)if(it.state===0){const closeToCamera=it.m.position.distanceTo(camera.position)<Math.max(.6,it.r*1.5);it.m.visible=!(closeToCamera||(menu&&Math.hypot(it.x,it.z)<14));}
-      contacts.forEach(({slime:s,shadow})=>{const r=s===player&&menu?(innerWidth>800?1.3:1):s.r;if(s!==player&&!s.dead)s.g.visible=!(menu&&Math.hypot(s.x,s.z)<32);shadow.visible=!s.dead&&s.g.visible;shadow.position.set(s.x,H(s.x,s.z)+.075,s.z);shadow.scale.setScalar(r*3.2);shadow.material.opacity=.85-Math.min(.45,(s.jy||0)*.15)});
+      for(const it of items)if(it.state===0){
+        const closeToCamera=it.m.position.distanceTo(camera.position)<Math.max(.6,it.r*1.5);
+        const blockedMenuForeground=menu&&Math.hypot(it.x,it.z)<(it.type==='ball'?43:14);
+        it.m.visible=!closeToCamera&&!blockedMenuForeground;
+      }
+      contacts.forEach(({slime:s,shadow})=>{const r=s===player&&menu?(innerWidth>800?1.3:1):s.r;if(s!==player&&!s.dead)s.g.visible=!(menu&&Math.hypot(s.x,s.z)<42+s.r*3);shadow.visible=!s.dead&&s.g.visible;shadow.position.set(s.x,H(s.x,s.z)+.075,s.z);shadow.scale.setScalar(r*3.2);shadow.material.opacity=.85-Math.min(.45,(s.jy||0)*.15)});
       halo.visible=!player.dead&&state==='play';halo.position.set(player.x,H(player.x,player.z)+.085,player.z);halo.scale.setScalar(player.r*1.22);halo.material.opacity=.3+Math.sin(time*2)*.08;
       animated.forEach((o,i)=>{if(!o.group.visible)return;const a=time*.12+o.phase,x=player.x+Math.sin(a)*o.radius,z=player.z+Math.cos(a*.9)*o.radius;const y=H(x,z)+o.height+Math.sin(time*1.3+i)*.5;o.group.position.set(x,y,z);o.group.rotation.y=-a;o.left.rotation.y=Math.sin(time*11+i)*.65;o.right.rotation.y=Math.PI-Math.sin(time*11+i)*.65;});
     },

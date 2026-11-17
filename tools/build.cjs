@@ -8,6 +8,7 @@ const files = [
   ['forest.css', 'forest.css'],
   ['forest-graphics.js', 'forest-graphics.js'],
   ['forest-atmosphere.js', 'forest-atmosphere.js'],
+  ['forest-scenery.js', 'forest-scenery.js'],
   ['vendor/three.min.js', 'vendor/three.min.js'],
   ['vendor/THREE-LICENSE.txt', 'vendor/THREE-LICENSE.txt']
 ];
